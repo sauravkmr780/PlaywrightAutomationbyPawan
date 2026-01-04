@@ -16,10 +16,6 @@ export default defineConfig({
   ],
   use: {
     headless: true, // Run with visible browser
-    viewport: null, // Set to null to use full screen
-    launchOptions: {
-      args: ['--start-maximized'] // Launch browser in maximized mode
-    },
     ignoreHTTPSErrors: true, // Bypass SSL certificate errors
     /* Base URL to use in actions like `await page.goto('')`. */
     // baseURL: 'http://localhost:3000',
