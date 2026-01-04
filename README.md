@@ -277,6 +277,219 @@ Add this to your README to show workflow status:
 
 ---
 
+## Page Object Model (POM) Setup
+
+### Overview
+This project uses the Page Object Model design pattern to organize test code and make it maintainable and reusable.
+
+### Folder Structure
+```
+project-root/
+├── pages/               # Page Object classes
+│   └── LoginPage.ts    # Example page object
+├── tests/              # Test files
+│   └── demoblaze.spec.ts
+```
+
+### Creating a Page Object
+
+#### 1. Create Page Class (pages/LoginPage.ts)
+
+```typescript
+import { Page, Locator } from '@playwright/test';
+
+export class LoginPage {
+    // Define locator variables
+    readonly page: Page;
+    readonly loginLink: Locator;
+    readonly loginHeading: Locator;
+    readonly usernameInput: Locator;
+    readonly passwordInput: Locator;
+    readonly loginButton: Locator;
+    
+    // Initialize locators in constructor
+    constructor(page: Page) {
+        this.page = page;
+        this.loginLink = page.getByRole('link', { name: 'Log in' });
+        this.loginHeading = page.getByRole('heading', { name: 'Log in' });
+        this.usernameInput = page.locator('#loginusername');
+        this.passwordInput = page.locator('#loginpassword');
+        this.loginButton = page.getByRole('button', { name: 'Log in' });
+    }
+    
+    // Action methods (no assertions)
+    async goto() {
+        await this.page.goto('https://demoblaze.com/');
+    }
+
+    async openLoginModal() {
+        await this.loginLink.click();
+    }
+
+    async fillCredentials(username: string, password: string) {
+        await this.usernameInput.fill(username);
+        await this.passwordInput.fill(password);
+    }
+
+    async clickLogin() {
+        await this.loginButton.click();
+    }
+}
+```
+
+#### 2. Use Page Object in Tests (tests/demoblaze.spec.ts)
+
+```typescript
+import { test, expect } from '@playwright/test';
+import { LoginPage } from '../pages/LoginPage';
+
+test.describe('Login Tests', () => {
+    test('User should login successfully', async ({ page }) => {
+        // Create page object instance
+        const loginPage = new LoginPage(page);
+        
+        // Use page object methods
+        await loginPage.goto();
+        await loginPage.openLoginModal();
+        
+        // Assertions in test (not in page object)
+        await expect(loginPage.loginHeading).toBeVisible();
+        
+        // Continue with actions
+        await loginPage.fillCredentials('testuser', 'password');
+        await loginPage.clickLogin();
+        
+        // More assertions
+        await expect(page.getByText('Welcome')).toBeVisible();
+    });
+});
+```
+
+### POM Best Practices
+
+#### 1. Page Object Structure
+- **Locators**: Define as `readonly` properties in constructor
+- **Actions**: Simple methods that perform UI interactions
+- **No Assertions**: Keep assertions in test files, not page objects
+- **Reusability**: Methods should be generic and reusable
+
+#### 2. Locator Strategies
+```typescript
+// Prefer role-based locators (more robust)
+page.getByRole('button', { name: 'Submit' })
+
+// Use text locators for visible text
+page.getByText('Welcome to our store')
+
+// Use IDs when necessary
+page.locator('#username')
+
+// Avoid complex CSS/XPath when possible
+```
+
+#### 3. Method Naming Conventions
+```typescript
+// Actions: verb-based
+async clickLogin()
+async fillUsername(username: string)
+async selectOption(value: string)
+
+// Navigation
+async goto()
+async navigateToCheckout()
+
+// Complex flows
+async completeRegistration(userData: UserData)
+```
+
+#### 4. Separation of Concerns
+
+**Page Object (pages/LoginPage.ts):**
+```typescript
+// ✅ Good: Simple actions
+async fillUsername(username: string) {
+    await this.usernameInput.fill(username);
+}
+
+// ❌ Bad: Including assertions
+async fillUsername(username: string) {
+    await this.usernameInput.fill(username);
+    await expect(this.usernameInput).toHaveValue(username); // Don't do this
+}
+```
+
+**Test File (tests/login.spec.ts):**
+```typescript
+// ✅ Good: Assertions in test
+await loginPage.fillUsername('testuser');
+await expect(loginPage.usernameInput).toHaveValue('testuser');
+
+// ✅ Good: Composing actions
+await loginPage.openLoginModal();
+await expect(loginPage.loginHeading).toBeVisible();
+await loginPage.fillCredentials('user', 'pass');
+await loginPage.clickLogin();
+```
+
+### Example: Complete Page Object
+
+#### HomePage.ts
+```typescript
+import { Page, Locator } from '@playwright/test';
+
+export class HomePage {
+    readonly page: Page;
+    readonly logo: Locator;
+    readonly searchBox: Locator;
+    readonly cartIcon: Locator;
+    readonly loginLink: Locator;
+    
+    constructor(page: Page) {
+        this.page = page;
+        this.logo = page.getByAltText('Company Logo');
+        this.searchBox = page.getByPlaceholder('Search');
+        this.cartIcon = page.getByRole('link', { name: 'Cart' });
+        this.loginLink = page.getByRole('link', { name: 'Log in' });
+    }
+    
+    async goto() {
+        await this.page.goto('/');
+    }
+
+    async search(query: string) {
+        await this.searchBox.fill(query);
+        await this.searchBox.press('Enter');
+    }
+
+    async goToCart() {
+        await this.cartIcon.click();
+    }
+
+    async goToLogin() {
+        await this.loginLink.click();
+    }
+}
+```
+
+### Benefits of This Approach
+
+1. **Maintainability**: Change UI locators in one place
+2. **Reusability**: Use page objects across multiple tests
+3. **Readability**: Tests are cleaner and easier to understand
+4. **Scalability**: Easy to add new pages and elements
+5. **Type Safety**: TypeScript provides autocomplete and type checking
+6. **Testability**: Assertions stay in tests for better test clarity
+
+### Tips
+
+- Create one page object per page/component
+- Keep methods small and focused
+- Use TypeScript for better IDE support
+- Document complex interactions
+- Don't over-engineer - start simple and refactor as needed
+
+---
+
 ## Quick Reference
 - **Run tests locally**: `npm run test`
 - **Generate local report**: `npm run report`
@@ -285,3 +498,5 @@ Add this to your README to show workflow status:
 - **CI/CD Reports (live)**: https://sauravkmr780.github.io/PlaywrightAutomationbyPawan
 - **GitHub Actions**: Go to Actions tab in repository
 - **Manual Trigger**: Actions → Playwright Tests → Run workflow
+- **Page Objects**: Located in `pages/` folder
+- **Test Files**: Located in `tests/` folder
