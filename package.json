@@ -1,0 +1,23 @@
+{
+  "name": "playwrightautomationbypawan",
+  "version": "1.0.0",
+  "description": "PlaywrightAutomationLearningbyPawan",
+  "main": "index.js",
+  "scripts": {
+  "test": "npx playwright test",
+  "report": "npx allure generate allure-results -o allure-report && npx allure open allure-report"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sauravkmr780/PlaywrightAutomationbyPawan.git"
+  },
+  "keywords": [],
+  "author": "Saurav Kumar",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@playwright/test": "^1.57.0",
+    "@types/node": "^25.0.3",
+    "allure-playwright": "^3.4.3"
+  }
+}
