@@ -108,7 +108,7 @@ jobs:
 
       - name: Run Playwright tests
         run: ${{ steps.test-command.outputs.command }}
-        continue-on-error: true
+        # Remove continue-on-error to fail workflow on test failures
 
       - name: Generate Allure Report
         if: always()
