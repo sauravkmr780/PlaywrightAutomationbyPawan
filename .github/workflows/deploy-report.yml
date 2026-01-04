@@ -3,7 +3,7 @@ name: Allure Report Generation
 on:
   # Trigger after test workflow completes
   workflow_run:
-    workflows: ["Playwright Tests with Allure Report"]
+    workflows: ["Playwright Test Cases Run"]
     types:
       - completed
 
