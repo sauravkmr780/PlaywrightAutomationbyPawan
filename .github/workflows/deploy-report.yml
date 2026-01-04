@@ -1,4 +1,4 @@
-name: Allure Report Generation and Deployment
+name: Allure Report Generation
 
 on:
   # Trigger after test workflow completes
