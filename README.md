@@ -102,6 +102,10 @@ Automated test execution using GitHub Actions with parameterized workflows for f
   - Environment: `qa`
   - Test Suite: `all`
   - Browser: `chromium`
+- **Workflow Behavior**:
+  - ✅ Passes if all tests pass
+  - ❌ Fails if any test fails
+  - 📊 Reports are generated regardless of test results
 
 ### Manual Workflow Execution
 
@@ -212,6 +216,13 @@ Each workflow run shows a summary with:
 - Pass/Fail status
 - Run number
 
+**Note**: Reports are generated and uploaded even if tests fail, allowing you to analyze failures.
+
+### Workflow Status
+- **✅ Success**: All tests passed
+- **❌ Failure**: One or more tests failed
+- **Reports**: Generated in both success and failure cases
+
 ### Artifact Retention
 - All artifacts are kept for **30 days**
 - Automatically cleaned up after retention period
@@ -235,6 +246,12 @@ The workflow runs automatically on:
 
 ### Troubleshooting
 
+#### Workflow Shows as Failed
+- This is **expected** when tests fail
+- Check Allure reports to see which tests failed
+- Reports are still generated and available for download
+- Fix the failing tests and re-run the workflow
+
 #### Tests Not Running
 - Check if workflow file is in `.github/workflows/` folder
 - Verify GitHub Actions is enabled in repository settings
@@ -244,6 +261,7 @@ The workflow runs automatically on:
 - Ensure GitHub Pages is enabled
 - Check deploy workflow completed successfully
 - Verify artifacts were uploaded from test workflow
+- Note: Deploy workflow runs even if tests fail
 
 #### Environment Variables Not Working
 - Update BASE_URL in workflow file with actual URLs
