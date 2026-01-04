@@ -1,0 +1,154 @@
+name: Playwright Tests with Allure Report
+
+on:
+  # Schedule: Daily at 9 AM PST (5 PM UTC) - Monday to Friday only
+  schedule:
+    - cron: '0 17 * * 1-5'  # 9 AM PST = 5 PM UTC, Mon-Fri only
+  
+  # Manual trigger with parameters
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to run tests'
+        required: true
+        default: 'qa'
+        type: choice
+        options:
+          - qa
+          - stage
+      test_suite:
+        description: 'Test suite to run'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - single
+          - multiple
+      test_file:
+        description: 'Test file(s) to run (e.g., tests/mytest.spec.ts or tests/test1.spec.ts tests/test2.spec.ts)'
+        required: false
+        default: ''
+        type: string
+      browser:
+        description: 'Browser to run tests on'
+        required: true
+        default: 'chromium'
+        type: choice
+        options:
+          - chromium
+          - firefox
+          - webkit
+          - all
+  
+  # Optional: Run on push to master
+  push:
+    branches: [ master ]
+
+jobs:
+  test:
+    name: Run Playwright Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Set Environment Variables
+        run: |
+          ENV="${{ github.event.inputs.environment || 'qa' }}"
+          echo "TEST_ENV=$ENV" >> $GITHUB_ENV
+          
+          # Set environment-specific URLs (customize these)
+          if [ "$ENV" == "qa" ]; then
+            echo "BASE_URL=https://qa.example.com" >> $GITHUB_ENV
+          elif [ "$ENV" == "stage" ]; then
+            echo "BASE_URL=https://stage.example.com" >> $GITHUB_ENV
+          fi
+
+      - name: Determine Test Command
+        id: test-command
+        run: |
+          TEST_SUITE="${{ github.event.inputs.test_suite || 'all' }}"
+          TEST_FILE="${{ github.event.inputs.test_file }}"
+          BROWSER="${{ github.event.inputs.browser || 'chromium' }}"
+          
+          if [ "$TEST_SUITE" == "all" ]; then
+            if [ "$BROWSER" == "all" ]; then
+              CMD="npx playwright test"
+            else
+              CMD="npx playwright test --project=$BROWSER"
+            fi
+          elif [ "$TEST_SUITE" == "single" ] || [ "$TEST_SUITE" == "multiple" ]; then
+            if [ -z "$TEST_FILE" ]; then
+              echo "Error: test_file is required for single/multiple test suite"
+              exit 1
+            fi
+            if [ "$BROWSER" == "all" ]; then
+              CMD="npx playwright test $TEST_FILE"
+            else
+              CMD="npx playwright test $TEST_FILE --project=$BROWSER"
+            fi
+          fi
+          
+          echo "command=$CMD" >> $GITHUB_OUTPUT
+          echo "Running: $CMD"
+
+      - name: Run Playwright tests
+        run: ${{ steps.test-command.outputs.command }}
+        continue-on-error: true
+
+      - name: Generate Allure Report
+        if: always()
+        run: |
+          npm install -g allure-commandline
+          allure generate allure-results -o allure-report --clean
+
+      - name: Upload Allure Report as Artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-report-${{ github.event.inputs.environment || 'qa' }}-${{ github.event.inputs.test_suite || 'all' }}-${{ github.run_number }}
+          path: allure-report/
+          retention-days: 30
+
+      - name: Upload Allure Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results-${{ github.event.inputs.environment || 'qa' }}-${{ github.event.inputs.test_suite || 'all' }}-${{ github.run_number }}
+          path: allure-results/
+          retention-days: 30
+
+      - name: Upload Playwright Report (if exists)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ github.event.inputs.environment || 'qa' }}-${{ github.event.inputs.test_suite || 'all' }}-${{ github.run_number }}
+          path: playwright-report/
+          retention-days: 30
+          if-no-files-found: ignore
+
+      - name: Test Summary
+        if: always()
+        run: |
+          echo "## Test Execution Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Environment**: ${{ github.event.inputs.environment || 'qa' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Test Suite**: ${{ github.event.inputs.test_suite || 'all' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Browser**: ${{ github.event.inputs.browser || 'chromium' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Test File(s)**: ${{ github.event.inputs.test_file || 'All tests' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status**: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Run Number**: ${{ github.run_number }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Reports**: Download artifacts to view Allure reports" >> $GITHUB_STEP_SUMMARY
