@@ -1,4 +1,4 @@
-name: Playwright Tests with Allure Report
+name: Playwright Test Case Run
 
 on:
   # Schedule: Daily at 9 AM PST (5 PM UTC) - Monday to Friday only

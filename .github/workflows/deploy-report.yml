@@ -1,4 +1,4 @@
-name: Deploy Allure Report to GitHub Pages
+name: Allure Report Generation and Deployment
 
 on:
   # Trigger after test workflow completes
