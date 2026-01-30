@@ -10,7 +10,7 @@ on:
     inputs:
       environment:
         description: 'Environment to run tests'
-        required: true
+        required: false
         default: 'qa'
         type: choice
         options:
@@ -19,7 +19,7 @@ on:
       test_suite:
         description: 'Test suite to run'
         required: true
-        default: 'all'
+        default: single
         type: choice
         options:
           - all
